@@ -85,6 +85,7 @@ EOT
 
         $tool = new SchemaTool($em);
 
+        /** @var \Doctrine\DBAL\Schema\Schema $fromSchema */
         $fromSchema = $conn->getSchemaManager()->createSchema();
         $toSchema = $tool->getSchemaFromMetadata($metadata);
 
@@ -117,15 +118,26 @@ EOT
     private function buildCodeFromSql(Configuration $configuration, array $sql)
     {
         $currentPlatform = $configuration->getConnection()->getDatabasePlatform()->getName();
-        $code = array(
-            "\$this->abortIf(\$this->connection->getDatabasePlatform()->getName() != \"$currentPlatform\", \"Migration can only be executed safely on '$currentPlatform'.\");", "",
-        );
+
+        $code = array();
         foreach ($sql as $query) {
             if (strpos($query, $configuration->getMigrationsTableName()) !== false) {
                 continue;
             }
-            $code[] = "\$this->addSql(\"$query\");";
+            $code[] = "\$this->addSql(\n    \"$query\"\n);";
         }
+
+        if (empty($code)) {
+            return;
+        }
+        array_unshift(
+            $code,
+            "\$this->abortIf(\n" .
+            "    \$this->connection->getDatabasePlatform()->getName() != \"$currentPlatform\",\n" .
+            "    \"Migration can only be executed safely on '$currentPlatform'.\"\n" .
+            ");",
+            ""
+        );
 
         return implode("\n", $code);
     }
