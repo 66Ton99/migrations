@@ -124,6 +124,21 @@ EOT
             if (strpos($query, $configuration->getMigrationsTableName()) !== false) {
                 continue;
             }
+            $replace = array(
+                ' CHANGE ' => "\n        CHANGE ",
+                ' COMMENT ' => "\n            COMMENT ",
+                ' ADD ' => "\n        ADD ",
+                ' DROP ' => "\n        DROP ",
+                ' FOREIGN KEY ' => "\n        FOREIGN KEY ",
+                ' REFERENCES ' => "\n        REFERENCES ",
+                ', ' => ",\n        ",
+            );
+
+            $query = str_replace(
+                array_keys($replace),
+                array_values($replace),
+                $query
+            );
             $code[] = "\$this->addSql(\n    \"$query\"\n);";
         }
 
